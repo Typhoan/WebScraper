@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css"
+    />
+
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>Product Scraper</title>
+  </head>
+  <body>
+    <div class="row" id="Products">
+      <div class="col-12" id="OptionButtons">
+        <center>
+          <a
+            id="TestToggle"
+            class="waves-effect waves-light btn red"
+            onclick="ToggleTestMode()"
+            >In Stock/Out of Stock</a
+          >
+          <a
+            id="MuteToggle"
+            class="waves-effect waves-light btn green"
+            onclick="ToggleMute()"
+          >Sound On</a>
+        </center>
+      </div>
+      <div class="col-12" id="Product-Container">
+        <table style="height: 100%; overflow-y: scroll">
+          <thead>
+            <tr>
+              <td style="width: 10%" ;>Vendor</td>
+              <td>Product</td>
+            </tr>
+          </thead>
+          <tbody id="Product-List"></tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+  <!-- You can also require other files to run in this process -->
+
+  <script>
+    if (typeof module === "object") {
+      window.module = module;
+      module = undefined;
+    }
+  </script>
+
+  <!-- normal script imports etc  -->
+  <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  <!-- Insert this line after script imports -->
+  <script>
+    if (window.module) module = window.module;
+  </script>
+  <script>
+    const electron = require("electron");
+    const { ipcRenderer, shell } = electron;
+    const tbody = document.querySelector("tbody");
+    const TestToggle = document.getElementById("TestToggle");
+    const MuteToggle = document.getElementById("MuteToggle");
+
+    var Muted = false;
+    var TestMode = true;
+
+    (function () {
+      setInterval(RefreshScrape, 10000);
+    })();
+
+    function RefreshScrape() {
+      ipcRenderer.send("Product:Update");
+    }
+
+    function ToggleTestMode() {
+      ipcRenderer.send("Toggle:TestMode");
+    }
+
+    function ToggleMute() {
+      ipcRenderer.send("Toggle:Mute");
+    }
+
+    ipcRenderer.on("Toggle:TestMode", function (e, TestModeToggle) {
+      TestMode = TestModeToggle;
+      if (TestMode) {
+        TestToggle.classList.remove("green");
+        TestToggle.classList.add("red");
+      } else {
+        TestToggle.classList.add("green");
+        TestToggle.classList.remove("red");
+      }
+    });
+
+    ipcRenderer.on("Toggle:Mute", function (e, MutedToggle) {
+      Muted = MutedToggle;
+      if (Muted) {
+        MuteToggle.classList.remove("green");
+        MuteToggle.classList.add("red");
+        MuteToggle.text = "Muted";
+      } else {
+        MuteToggle.classList.add("green");
+        MuteToggle.classList.remove("red");
+        MuteToggle.text = "Sound On";
+      }
+    });
+
+    ipcRenderer.on("Product:Update", function (e, items) {
+      tbody.innerHTML = "";
+
+      items.forEach((item) => {
+        var productDetails = item.split("|");
+
+        var tr = document.createElement("tr");
+        var vendor = document.createElement("td");
+        var vendorText = document.createTextNode(productDetails[0]);
+        vendor.appendChild(vendorText);
+
+        var link = document.createElement("td");
+        var linkText = document.createTextNode(productDetails[1]);
+        var a = document.createElement("a");
+
+        a.title = productDetails[1];
+        a.href = productDetails[2];
+        a.text = productDetails[1];
+        link.appendChild(a);
+
+        tr.appendChild(vendor);
+        tr.appendChild(link);
+        tbody.appendChild(tr);
+      });
+      if(!Muted && !TestMode && items.length > 0){
+        var audio = new Audio("./resources/alert.wav");
+        audio.play();
+      }
+    });
+
+    $(document).on("click", 'a[href^="http"]', function (event) {
+      event.preventDefault();
+      shell.openExternal(this.href);
+    });
+  </script>
+</html>
