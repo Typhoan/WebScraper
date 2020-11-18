@@ -3,6 +3,7 @@ const electron = require("electron");
 const path = require("path");
 const url = require("url");
 const crawler = require("./crawlers/crawlerEngine");
+const axios = require("axios");
 var validUrl = require('valid-url');
 
 // SET ENV
@@ -19,7 +20,8 @@ var urlKey = "";
 
 var UrlDictionary = {
   NeweggUrl: "https://www.newegg.com/p/pl?d=amd+ryzen+9&N=601359163%20100007671%208000",
-  BestBuyUrl:"https://www.bestbuy.com/site/promo/amd-ryzen-5000"
+  BestBuyUrl:"https://www.bestbuy.com/site/promo/amd-ryzen-5000",
+  BHUrl:"https://www.bhphotovideo.com/c/search?q=ryzen&filters=fct_category%3Acpus_19865%2Cfct_compatible-cpu_6444%3Aamd-ryzen-5-gen-4%7Camd-ryzen-7-gen-4%7Camd-ryzen-9-gen-4"
 };
 
 app.on("ready", function () {
@@ -82,15 +84,22 @@ function createAddWindow(setting) {
 }
 
 // Catch item:add
-ipcMain.on("URL:Update", function (e, url) {
-  if(validUrl.isUri(url)){
-    UrlDictionary[urlKey] = url;
+ipcMain.on("URL:Update", async function (e, url) {
+  if(url === null || url === "" || url === undefined){
+    UrlDictionary[urlKey] = "";
     addWindow.close();
   }
-
-  
-  // Still have a reference to addWindow in memory. Need to reclaim memory (Grabage collection)
-  //addWindow = null;
+  else if(validUrl.isUri(url)){
+    try{
+      var $html = await axios.get(link);
+    }catch(error){
+      e.sender.send("URL:Error", "Invalid URL");
+    }
+    UrlDictionary[urlKey] = url;
+    addWindow.close();
+  }else {
+    e.sender.send("URL:Error", "Invalid URL");
+  }
 });
 
 ipcMain.on("Product:Update", async function (e) {
@@ -145,6 +154,13 @@ const mainMenuTemplate = [
         click() {
           urlKey = "BestBuyUrl";
           createAddWindow("BestBuy");
+        },
+      },
+      {
+        label: "Update B&H URL",
+        click() {
+          urlKey = "BHUrl";
+          createAddWindow("BH");
         },
       }
     ]

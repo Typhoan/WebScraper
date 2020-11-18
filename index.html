@@ -24,7 +24,8 @@
             id="MuteToggle"
             class="waves-effect waves-light btn green"
             onclick="ToggleMute()"
-          >Sound On</a>
+            >Sound On</a
+          >
         </center>
       </div>
       <div class="col-12" id="Product-Container">
@@ -65,12 +66,18 @@
     var Muted = false;
     var TestMode = true;
 
+    var refreshRate = 10000;
+    var currentlyRefreshing = false;
+
     (function () {
-      setInterval(RefreshScrape, 10000);
+      setInterval(RefreshScrape, refreshRate);
     })();
 
     function RefreshScrape() {
-      ipcRenderer.send("Product:Update");
+      if (currentlyRefreshing === false) {
+        ipcRenderer.send("Product:Update");
+        currentlyRefreshing = true;
+      }
     }
 
     function ToggleTestMode() {
@@ -129,10 +136,11 @@
         tr.appendChild(link);
         tbody.appendChild(tr);
       });
-      if(!Muted && !TestMode && items.length > 0){
+      if (!Muted && !TestMode && items.length > 0) {
         var audio = new Audio("./resources/alert.wav");
         audio.play();
       }
+      currentlyRefreshing = false;
     });
 
     $(document).on("click", 'a[href^="http"]', function (event) {

@@ -1,6 +1,5 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
-const { isNullOrUndefined } = require("util");
 
 const linkPrefix = "https://www.newegg.com";
 const AUTO_NOTIFY = "AUTO NOTIFY";
@@ -11,6 +10,10 @@ var methods = {};
 var productLinks = [];
 
 methods.GetNewEggProducts = async function (Url, TestMode = false) {
+  isNullOrUndefined = (value) => {
+    return value === null || value === undefined;
+  };
+
   CheckForInstock = (product, link, buttonText) => {
     if (!buttonText.includes(AUTO_NOTIFY) && !buttonText.includes(SOLD_OUT)) {
       productLinks.push(SOURCE + product + "|" + link);
@@ -51,9 +54,7 @@ methods.GetNewEggProducts = async function (Url, TestMode = false) {
 
   try {
     productLinks = [];
-    const { data } = await axios.get(
-        Url
-    );
+    const { data } = await axios.get(Url);
     const $ = cheerio.load(data);
     var $elements = $("div[class=item-container]");
 

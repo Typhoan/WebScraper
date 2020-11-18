@@ -10,7 +10,7 @@
         <label>Update Product URL</label>
         <input type="text" id="item" autofocus>
       </div>
-      <button class="waves-effect waves-light btn" type="submit">Update URL</button>
+      <button class="waves-effect waves-light btn" type="button" onclick="submitForm()">Update URL</button>
     </form>
   </div>
 
@@ -21,13 +21,16 @@
 
     document.querySelector('form').addEventListener('submit', submitForm);
 
-    function submitForm(e){
-      e.preventDefault();
+    function submitForm(){
       ipcRenderer.send('URL:Update', item.value);
     }
 
     ipcRenderer.on("URL:Set", function (e, url) {
         item.value = url;
+    });
+
+    ipcRenderer.on("URL:Error", function (e, error) {
+        alert(error);
     });
   </script>
 </body>

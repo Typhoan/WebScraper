@@ -1,6 +1,5 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
-const { isNullOrUndefined } = require("util");
 
 const linkPrefix = "https://www.bestbuy.com";
 const SOURCE = "BestBuy|";
@@ -14,6 +13,10 @@ const methods = {};
 var productLinks = [];
 
 methods.GetBestBuyProducts = async function (Url, TestMode = false) {
+  isNullOrUndefined = (value) => {
+    return value === null || value === undefined;
+  };
+
   GetIndividualLink = async (product, link) => {
     try {
       var $html2 = await axios.get(link);
@@ -39,7 +42,7 @@ methods.GetBestBuyProducts = async function (Url, TestMode = false) {
               buttonText.includes(SHOP_OPEN_BOX) ||
               buttonText.includes(COMING_SOON)
             ) {
-              productLinks.push(SOURCE+ product + "|" + link);
+              productLinks.push(SOURCE + product + "|" + link);
             }
           }
         }
@@ -51,9 +54,7 @@ methods.GetBestBuyProducts = async function (Url, TestMode = false) {
   };
 
   try {
-    const { data } = await axios.get(
-      Url
-    );
+    const { data } = await axios.get(Url);
     const $ = cheerio.load(data);
     productLinks = [];
     var $elements = $("div[class=right-column]");
